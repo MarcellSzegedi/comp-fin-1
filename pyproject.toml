@@ -8,4 +8,6 @@ dependencies = [
     "matplotlib>=3.10.1",
     "pre-commit>=4.2.0",
     "seaborn>=0.13.2",
+    "skfolio>=0.9.0",
+    "yfinance>=0.2.55",
 ]
