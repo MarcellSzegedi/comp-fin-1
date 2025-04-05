@@ -9,4 +9,6 @@ dependencies = [
     "pre-commit>=4.2.0",
     "pytest>=8.3.5",
     "seaborn>=0.13.2",
+    "skfolio>=0.9.0",
+    "yfinance>=0.2.55",
 ]
