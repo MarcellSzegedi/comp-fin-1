@@ -7,5 +7,6 @@ requires-python = ">=3.13"
 dependencies = [
     "matplotlib>=3.10.1",
     "pre-commit>=4.2.0",
+    "pytest>=8.3.5",
     "seaborn>=0.13.2",
 ]
