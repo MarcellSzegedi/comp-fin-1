@@ -3,7 +3,7 @@
 # In case a certain rule needs to be ignored for a whole file the following comment
 # can be added to the first line (LOC 1): '# ruff: noqa: {code}'
 
-# Set the maximum line length to 79.
+# Set the maximum line length to 120.
 line-length = 120
 
 [lint]
@@ -15,6 +15,7 @@ extend-select = [
     "D",  # pydocstyle
     "N",  # pep8-naming,
     "ARG",  # flake8-unused-arguments
+    "I",  # order imports
 ]
 
 ignore = [
