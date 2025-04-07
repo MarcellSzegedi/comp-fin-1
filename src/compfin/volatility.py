@@ -1,9 +1,10 @@
 """Market volatility calculations."""
 
-import yfinance as yf
 import datetime
-import numpy as np
+
 import matplotlib.pyplot as plt
+import numpy as np
+import yfinance as yf
 from skfolio.datasets import load_sp500_dataset, load_sp500_implied_vol_dataset
 from skfolio.preprocessing import prices_to_returns
 
