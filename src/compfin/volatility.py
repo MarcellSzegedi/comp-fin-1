@@ -67,10 +67,10 @@ def rolling_window_comparison(returns, prices_high, prices_low):
     inside_sum_parkinson = np.log(prices_high / prices_low) ** 2
     constant_parkinson = 1 / (4 * np.log(2))
     sum_parkinson_window = inside_sum_parkinson.rolling(window=size_window).sum()
-    rolling_window_parkinson = np.sqrt(constant_parkinson * sum_parkinson_window)
+    rolling_window_parkinson = np.sqrt(255) * np.sqrt(constant_parkinson * sum_parkinson_window)
 
     # Classical rolling window
-    rolling_window_classical = returns.rolling(window=size_window).apply(
+    rolling_window_classical = np.sqrt(255) * returns.rolling(window=size_window).apply(
         classical_volatility, raw=True
     )
 
@@ -104,19 +104,19 @@ def realized_vs_implied():
     )
 
     # Realized Parkinson volatility
-    extra_data = yf.download(stock, start="2015-01-01", end="2022-12-31")
-    prices_high = extra_data["High"]
-    prices_low = extra_data["Low"]
+    # extra_data = yf.download(stock, start="2015-01-01", end="2022-12-31")
+    # prices_high = extra_data["High"]
+    # prices_low = extra_data["Low"]
 
-    inside_sum_parkinson = np.log(prices_high / prices_low) ** 2
-    constant_parkinson = 1 / (4 * np.log(2))
-    sum_parkinson_window = inside_sum_parkinson.rolling(window=size_window).sum()
-    realized_vol_park = np.sqrt(constant_parkinson * sum_parkinson_window)
+    # inside_sum_parkinson = np.log(prices_high / prices_low) ** 2
+    # constant_parkinson = 1 / (4 * np.log(2))
+    # sum_parkinson_window = inside_sum_parkinson.rolling(window=size_window).sum()
+    # realized_vol_park = np.sqrt(constant_parkinson * sum_parkinson_window)
 
     plt.figure(figsize=(12, 6))
-    plt.plot(realized_vol_clas, label="Realized Volatility (classical)")
+    plt.plot(realized_vol_clas * np.sqrt(255), label="Realized Volatility (classical)")
     plt.plot(implied_vol, label="Implied Volatility")
-    plt.plot(realized_vol_park, label="Realized Volatility (Parkinson)")
+    # plt.plot(realized_vol_park, label="Realized Volatility (Parkinson)")
     plt.legend()
     plt.title(f"Realized vs. implied Volatility for {stock}")
     plt.ylabel("Volatility")
