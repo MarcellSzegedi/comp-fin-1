@@ -1,3 +1,12 @@
+"""Course: Computational Finance
+Names: Marcell ..., Michael ... and Tika van Bennekum
+Student IDs: ..., ... and 13392425
+
+File description:
+    Part 1 of lab assignment 1.
+    In this file we determine VIX using the VIX_t estimator.
+"""
+
 import datetime
 import numpy as np
 import pandas as pd
