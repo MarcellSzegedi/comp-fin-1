@@ -7,11 +7,12 @@
 # volatility used in the delta computation (i.e., both set to 20%). Vary the frequency of hedge adjustments
 # (from daily to weekly) and explain the results.
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
-def simulate_euler_black_scholes(S0, mu, sigma, T, N):
-    """ taken from psuedocode in lecturenotes. """
+
+def simulate_euler_black_scholes(S0, mu, sigma, T, N):  # noqa
+    """Taken from psuedocode in lecturenotes."""
     dt = T / N  # Time step
     time = np.linspace(0, T, N + 1)  # Time grid
     S = np.zeros(len(time))
@@ -23,18 +24,19 @@ def simulate_euler_black_scholes(S0, mu, sigma, T, N):
 
     return time, S
 
+
 # Parameters
-S0 = 100     # Initial asset price
-mu = 0.05    # Drift
+S0 = 100  # Initial asset price
+mu = 0.05  # Drift
 sigma = 0.2  # Volatility
-T = 1.0      # Time to maturity
-N = 1000     # Number of steps
+T = 1.0  # Time to maturity
+N = 1000  # Number of steps
 
 time, S = simulate_euler_black_scholes(S0, mu, sigma, T, N)
 
 plt.figure(figsize=(12, 6))
 plt.plot(time, S)
-plt.title(f"Euler Approximation of BS")
+plt.title("Euler Approximation of BS")
 plt.ylabel("Time")
 plt.xlabel("Asset price")
 plt.savefig("results/euler", dpi=300, bbox_inches="tight")

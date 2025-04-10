@@ -1,5 +1,4 @@
-"""
-Course: Computational Finance
+"""Course: Computational Finance
 Names: Marcell ..., Michael ... and Tika van Bennekum
 Student IDs: ..., ... and 13392425
 
@@ -11,14 +10,13 @@ File description:
     the implied volatility of the same stock.
 """
 
-import yfinance as yf
 import datetime
-import numpy as np
+
 import matplotlib.pyplot as plt
-import pandas as pd
+import numpy as np
+import yfinance as yf
 from skfolio.datasets import load_sp500_dataset, load_sp500_implied_vol_dataset
 from skfolio.preprocessing import prices_to_returns
-
 
 ticker = "TSLA"
 start_date = "2015-01-01"
@@ -39,14 +37,13 @@ def classical_drift(returns):
 
 def classical_volatility(returns):
     """This is the formula of the classical estimator to calculate volatility (Eq 14).
-    In our case, because T=N, it is the same as the std formula from python."""
+    In our case, because T=N, it is the same as the std formula from python.
+    """
     returns_squared = returns**2
     mean_return = classical_drift(returns)
     N = len(returns)
     T = N  # timestep is per day, so T = N
-    volatility_squared = (1 / (N - 1)) * returns_squared.sum() - (
-        T / (N - 1)
-    ) * mean_return**2
+    volatility_squared = (1 / (N - 1)) * returns_squared.sum() - (T / (N - 1)) * mean_return**2
     volatility = np.sqrt(volatility_squared)
     return volatility
 
@@ -70,9 +67,7 @@ def rolling_window_comparison(returns, prices_high, prices_low):
     rolling_window_parkinson = np.sqrt(255) * np.sqrt(constant_parkinson * sum_parkinson_window)
 
     # Classical rolling window
-    rolling_window_classical = np.sqrt(255) * returns.rolling(window=size_window).apply(
-        classical_volatility, raw=True
-    )
+    rolling_window_classical = np.sqrt(255) * returns.rolling(window=size_window).apply(classical_volatility, raw=True)
 
     plt.figure(figsize=(12, 6))
     rolling_window_classical.plot(label="Rolling volatility classical")
@@ -99,9 +94,7 @@ def realized_vs_implied():
     # Realized classical volatility
     X = prices_to_returns(prices)
     X = X.loc["2015":][stock]
-    realized_vol_clas = X.rolling(window=size_window).apply(
-        classical_volatility, raw=True
-    )
+    realized_vol_clas = X.rolling(window=size_window).apply(classical_volatility, raw=True)
 
     # Realized Parkinson volatility
     # extra_data = yf.download(stock, start="2015-01-01", end="2022-12-31")
@@ -131,4 +124,3 @@ returns = (prices_close - prices_close.shift(1)) / prices_close.shift(1)
 rolling_window_comparison(returns, prices_high, prices_low)
 # Implied versus realized volatility
 realized_vs_implied()
-

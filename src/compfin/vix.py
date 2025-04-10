@@ -1,92 +1,92 @@
-# import yfinance as yf
-# import datetime
-
-# spx_symbol = "^SPX"
-# today = "2025-03-28"  # Keep this fixed in your implementation
-# end_date = datetime.datetime.strptime(today, "%Y-%m-%d").date()
-# start_date = end_date - datetime.timedelta(days=365)
-
-# spx_data = yf.download(spx_symbol, start=start_date, end=end_date)
-# lastBusDay = spx_data.index[-1]
-# vix_data = yf.download("^VIX", start=lastBusDay, end=lastBusDay + datetime.timedelta(days=1))
-# print(vix_data)
-
-
-
-# spx_ticker = yf.Ticker("^SPX")
-# # Suppose the next expiration is "2025-04-28"
-# expiry_date = "2025-04-28"  # Fixed to approximate a 30-day horizon as per CBOE
-# chain = spx_ticker.option_chain(expiry_date)
-# calls_df = chain.calls
-# puts_df = chain.puts
-
-# print("Calls Head:")
-# print(calls_df.head())
-
-# print("Puts Head:")
-# print(puts_df.head())
-
-# # Optionally, save to CSV
-# calls_df.to_csv("spx_calls.csv", index=False)
-# puts_df.to_csv("spx_puts.csv", index=False)
-
-import yfinance as yf
 import datetime
 import numpy as np
 import pandas as pd
+import yfinance as yf
 
-# Set dates
-today_str = "2025-03-28"
+
+def calculate_F(calls, puts, r, tau):
+    """Calculate forward price approximation using put-call parity:
+    VIX uses european options, so F ≈ K + e^(rτ) * (C - P)."""
+    calls = calls.set_index("strike")
+    puts = puts.set_index("strike")
+
+    difference = abs(calls["mid_call"] - puts["mid_put"])
+    K_zero = difference.idxmin()
+
+    C = calls.loc[K_zero, "mid_call"]
+    P = puts.loc[K_zero, "mid_put"]
+
+    F = K_zero + np.exp(r * tau) * (C - P)
+    return F
+
+
+def calc_delta_K(strikes):
+    """Accounts for the fact that not every option contributes
+    the same amount."""
+    delta_K = np.zeros_like(strikes)
+    delta_K[1:-1] = (strikes[2:] - strikes[:-2]) / 2
+    delta_K[0] = strikes[1] - strikes[0]
+    delta_K[-1] = strikes[-1] - strikes[-2]
+    return delta_K
+
+
+def vix_integral(otm, price_col):
+    """Estimates the integral from formula 19."""
+    K = otm["strike"].values
+    prices = otm[price_col].values
+    delta_K = calc_delta_K(K)
+    inside_sum = prices * delta_K / (K**2)
+    return inside_sum.sum()
+
+
+def cbeo_vix():
+    """The CBOE-quoted VIX."""
+    spx_data = yf.download(spx_symbol, start=start_date, end=end_date)
+    lastBusDay = spx_data.index[-1]
+    vix_data = yf.download(
+        "^VIX", start=lastBusDay, end=lastBusDay + datetime.timedelta(days=1)
+    )
+    vix_quote = vix_data["Close"].values[0]
+    print(f"CBOE VIX quote: {vix_quote[0]}")
+
+
+def estimate_vix():
+    """ Estimates VIX using estimator VIX_t. """
+
+    # Chain calls corresponding to S&P 500 on certain date
+    ticker = yf.Ticker(spx_symbol)
+    expiry_date = "2025-04-28"  # Fixed to approximate a 30-day horizon as per CBOE
+    calls = ticker.option_chain(expiry_date).calls
+    puts = ticker.option_chain(expiry_date).puts
+
+    # Compute mid prices for puts and calls
+    # This estimates the true market value
+    calls["mid_call"] = (calls["bid"] + calls["ask"]) / 2
+    puts["mid_put"] = (puts["bid"] + puts["ask"]) / 2
+    options = pd.merge(
+        calls[["strike", "mid_call"]], puts[["strike", "mid_put"]], on="strike"
+    )
+
+    tau = 30 / 365
+    r = 0.05  # risk-free rate
+    F = calculate_F(calls, puts, r, tau)
+
+    puts_otm = options[options["strike"] < F]
+    calls_otm = options[options["strike"] > F]
+    put_part = vix_integral(puts_otm, "mid_put")
+    call_part = vix_integral(calls_otm, "mid_call")
+
+    # Final calculations formula
+    vix_squared = (2 * np.exp(r * tau) / tau) * (put_part + call_part)
+    vix_estimate = np.sqrt(vix_squared)
+    vix_estimate = 100 * vix_estimate # To convert from decimal to percentage.
+
+    print(f"Estimated VIX: {vix_estimate:.2f}")
+
+spx_symbol = "^SPX"
+today_str = "2025-03-28"  # This date needs to stay fixed
 end_date = datetime.datetime.strptime(today_str, "%Y-%m-%d").date()
 start_date = end_date - datetime.timedelta(days=365)
 
-# Download SPX and VIX data
-spx_data = yf.download("^SPX", start=start_date, end=end_date)
-lastBusDay = spx_data.index[-1].date()
-
-# Download SPX options chain
-ticker = yf.Ticker("^SPX")
-expiry_date = "2025-04-28"  # Approx 30-day maturity
-calls = ticker.option_chain(expiry_date).calls
-puts = ticker.option_chain(expiry_date).puts
-
-# Merge calls and puts into a single dataframe
-options = pd.merge(calls, puts, on='strike', how='outer', suffixes=('_call', '_put'))
-options = options.dropna(subset=['lastPrice_call', 'lastPrice_put'])  # drop NaNs
-
-# Calculate forward price approximation
-# Use put-call parity: F ≈ K + e^(rτ) * (C - P)
-tau = 30 / 365
-r = 0.05  # risk-free rate (example)
-options['mid'] = (options['lastPrice_call'] + options['lastPrice_put']) / 2
-atm_strike = options.iloc[(options['mid'] - options['mid'].min()).abs().argsort()[:1]]['strike'].values[0]
-F = atm_strike  # Approximate forward price
-
-# Separate OTM options
-puts_otm = options[options['strike'] < F]
-calls_otm = options[options['strike'] > F]
-
-# Estimate VIX using discretized formula
-def vix_integral(df, price_col):
-    strikes = df['strike'].values
-    prices = df[price_col].values
-    delta_K = np.diff(strikes)
-    delta_K = np.append(delta_K, delta_K[-1])  # repeat last spacing
-
-    integrand = prices * delta_K / (strikes ** 2)
-    return integrand.sum()
-
-put_contrib = vix_integral(puts_otm, 'lastPrice_put')
-call_contrib = vix_integral(calls_otm, 'lastPrice_call')
-
-vix_squared = (2 * np.exp(r * tau) / tau) * (put_contrib + call_contrib)
-vix_estimate = 100 * np.sqrt(vix_squared)
-
-print(f"Estimated VIX: {vix_estimate:.2f}")
-
-# Get the quoted VIX for comparison
-vix_data = yf.download("^VIX", start=lastBusDay, end=lastBusDay + datetime.timedelta(days=1))
-vix_quote = vix_data['Adj Close'].iloc[0]
-print(f"CBOE VIX quote: {vix_quote:.2f}")
-
-
+estimate_vix()
+cbeo_vix()
